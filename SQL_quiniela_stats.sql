@@ -53,7 +53,7 @@ DELIMITER ;
 #---------------------------------------------------3----------------------------------------------------------------------------
 
 /*
-The following code if focused on analyzing and clean data for a specific table ('nacional'), to understand what are the main steps required for a stored procedure to automate the cleaning of additional tables -as needed-
+The following code if focused on analyzing and cleaning data for a specific table ('nacional'), to understand what are the main steps required for a stored procedure to automate the cleaning of additional tables -as needed-
 */
 
 -- Visually check the data
@@ -145,24 +145,56 @@ FROM quiniela.nacional
 GROUP BY period
 ORDER BY COUNT(DISTINCT(lottery_date)) DESC;
 
--- Check non-matching dates between the different periods
+-- Check non-matching dates in all periods (88 results - 0.04% approximately)
 
+/*
+Most of exceptions occur in a holiday -where the number of periods may vary- or Saturday -where there are only 3 periods-
+*/
 
+SELECT lottery_date, COUNT(DISTINCT(period)) AS number_of_periods, DAYOFWEEK(lottery_date) AS day_of_week
+FROM quiniela.nacional
+GROUP BY lottery_date
+HAVING COUNT(DISTINCT(period)) != 4
+ORDER BY COUNT(DISTINCT(period)) ASC, lottery_date ASC;
 
-
-
-
-
--- Check that all dates, for each period, have the same number of positions (numbers drawn), by retrieving those whose count is different than 21
+-- Check that all dates, for each period, have the same number of positions (numbers drawn), by retrieving those whose count is different than 20 (28 results, representing 221 rows, mostly 'nocturna' - 0.45%)
 SELECT lottery_date, period, COUNT(*) AS number_of_positions
 FROM quiniela.nacional
 GROUP BY lottery_date, period
-HAVING COUNT(position) != 21;
+HAVING COUNT(position) != 20;
 
+	-- Check number of total rows representing dates and periods with less than 20 positions
+	SELECT qn.lottery_date, qn.period, qn.position
+	FROM quiniela.nacional qn
+	INNER JOIN
+		(SELECT lottery_date, period, COUNT(*) AS number_of_positions
+		FROM quiniela.nacional
+		GROUP BY lottery_date, period
+		HAVING COUNT(position) != 20) ft -- filtered table
+	WHERE qn.lottery_date = ft.lottery_date 
+		AND qn.period = ft.period
+	ORDER BY qn.lottery_date ASC, qn.period, qn.position ASC;
 
+-- Delete full records of "Quinielas" with incomplete position information
+DELETE oqn
+FROM quiniela.nacional oqn -- original quiniela nacional
+JOIN 
+(SELECT lottery_date, period, COUNT(*) AS number_of_positions
+	FROM quiniela.nacional
+	GROUP BY lottery_date, period
+	HAVING COUNT(position) != 20) ft -- filtered table
+WHERE oqn.lottery_date = ft.lottery_date
+AND oqn.period = ft.period;
 
+-- Check there are no lotteries on a Sunday
+SELECT *, DAYOFWEEK(lottery_date) as day_of_week
+FROM quiniela.nacional
+WHERE DAYOFWEEK(lottery_date) = 1
+ORDER BY lottery_date ASC;
 
-
+	-- Remove records dated as Sundays (40 records)
+    DELETE FROM quiniela.nacional
+    WHERE DAYOFWEEK(lottery_date) = 1;
 
 #---------------------------------------------------4----------------------------------------------------------------------------
 
