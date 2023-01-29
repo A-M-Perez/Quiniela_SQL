@@ -126,6 +126,10 @@ SELECT *
 FROM quiniela.nacional
 WHERE lottery_date IS NULL;
 
+-- If any, delete lottery dates with NULL values
+DELETE FROM quiniela.nacional
+WHERE lottery_date IS NULL;
+
 -- Check for columns' values
 SELECT DISTINCT(period)
 FROM quiniela.nacional;
@@ -198,21 +202,7 @@ ORDER BY lottery_date ASC;
 
 #---------------------------------------------------4----------------------------------------------------------------------------
 
--- Function to create the UNION ALL code needed to unify all available tables within the specified quiniela (i.e., 'nacional', 'buenos_aires', etc)
-DROP FUNCTION IF EXISTS clean_tables;
-DELIMITER $$
-CREATE FUNCTION clean_tables(quiniela_table_name VARCHAR(255)) RETURNS VARCHAR(2000)
-DETERMINISTIC
-NO SQL
-READS SQL DATA
-	BEGIN
-	END$$
-DELIMITER ;
-
-
-#---------------------------------------------------5----------------------------------------------------------------------------
-
--- Procedure to create 1 unified table with all the period for a specific 'quiniela' (i.e., 'nacional', 'buenos_aires', etc)
+-- Procedure to create 1 unified table with all the period for a specific 'quiniela' (i.e., 'nacional', 'buenos_aires', etc) and clean the created table
 DROP PROCEDURE IF EXISTS process_quiniela;
 DELIMITER $$
 CREATE PROCEDURE process_quiniela(IN quiniela_name VARCHAR(255))
@@ -221,14 +211,102 @@ CREATE PROCEDURE process_quiniela(IN quiniela_name VARCHAR(255))
         SET @quiniela_union_all = CONCAT(
 			'CREATE TABLE IF NOT EXISTS ', quiniela_name, ' ', 
             check_tables(quiniela_name));
-
 		PREPARE run_union_statement FROM @quiniela_union_all;
         EXECUTE run_union_statement;
+        
+        -- Rename 'date' to 'lottery_date', to avoid using reserved words as column names
+		SET @change_column_name = CONCAT(
+			'ALTER TABLE quiniela.', quiniela_name,
+			' RENAME COLUMN `date` TO lottery_date');
+		PREPARE change_name FROM @change_column_name;
+        EXECUTE change_name;
 
+		-- Display the total number of records
+		SET @display_count = CONCAT(
+			'SELECT COUNT(*) AS total_number_of_records
+			FROM quiniela.', quiniela_name);
+        PREPARE count_records FROM @display_count;
+        EXECUTE count_records;
+
+		-- Separate position 'Letras' from number positions, into a new table
+		SET @split_tables = CONCAT(
+			'CREATE TABLE ', quiniela_name, '_letras ',
+			'SELECT * 
+			FROM quiniela.', quiniela_name,
+			' WHERE position = "Letras"');
+		PREPARE create_table_letras FROM @split_tables;
+        EXECUTE create_table_letras;
+
+		-- Remove all occurrences with position 'Letras' from original table. Check that rows affected match the total number of occurrences in the newly created table above
+		SET @remove_letras = CONCAT(
+			'DELETE FROM quiniela.', quiniela_name,
+			' WHERE position = "Letras"');		
+        PREPARE delete_letras FROM @remove_letras;
+        EXECUTE delete_letras;
+
+		-- Remove occurrences where results are not a number (339 rows removed)
+		SET @clean_result = CONCAT(
+			'DELETE FROM quiniela.', quiniela_name,
+			' WHERE result = "----" OR result = ""');
+		PREPARE clean_invalid_results FROM @clean_result;
+        EXECUTE clean_invalid_results;
+
+		-- Correct format for each of the columns
+		SET @correct_format = CONCAT(
+			'ALTER TABLE quiniela.', quiniela_name,
+			' MODIFY lottery_date DATE,
+			MODIFY quiniela VARCHAR(100),
+			MODIFY period VARCHAR(100),
+			MODIFY position SMALLINT(2),
+			MODIFY result SMALLINT(4) ZEROFILL');
+		PREPARE reformat_table FROM @correct_format;
+        EXECUTE reformat_table;
+        
+        -- If any, delete lottery dates with NULL values
+		SET @delete_null_dates = CONCAT(
+			'DELETE FROM quiniela.', quiniela_name,
+			' WHERE lottery_date IS NULL');
+		PREPARE delete_null_lottery_dates FROM @delete_null_dates;
+        EXECUTE delete_null_lottery_dates;
+
+		-- Check for columns' values
+		SET @check_period_values = CONCAT(
+            'SELECT DISTINCT(period)
+			FROM quiniela.', quiniela_name);
+		PREPARE check_periods FROM @check_period_values;
+
+		SET @check_position_values = CONCAT(
+			'SELECT DISTINCT(position)
+			FROM quiniela.', quiniela_name);
+		PREPARE check_positions FROM @check_position_values;
+        EXECUTE check_periods;
+        EXECUTE check_positions;
+        
+        -- Delete full records of "Quinielas" with incomplete position information
+		SET @delete_incomplete = CONCAT(
+			'DELETE oqn
+			FROM quiniela.', quiniela_name, ' oqn
+			JOIN 
+			(SELECT lottery_date, period, COUNT(*) AS number_of_positions
+				FROM quiniela.', quiniela_name,
+				' GROUP BY lottery_date, period
+				HAVING COUNT(position) != 20) ft
+			WHERE oqn.lottery_date = ft.lottery_date
+			AND oqn.period = ft.period');
+        PREPARE delete_incomplete_quinielas FROM @delete_incomplete;
+        EXECUTE delete_incomplete_quinielas;
+        
+        -- Remove records dated as Sundays (40 records)
+		SET @check_weekday = CONCAT(
+			'DELETE FROM quiniela.', quiniela_name,
+			' WHERE DAYOFWEEK(lottery_date) = 1');
+		PREPARE remove_sundays FROM @check_weekday;
+        EXECUTE remove_sundays;
+        
 	END$$
 DELIMITER ;
 
-#---------------------------------------------------6----------------------------------------------------------------------------
+#---------------------------------------------------5----------------------------------------------------------------------------
 
 -- Execute stored procedure for 'Quiniela nacional'
 CALL process_quiniela('nacional');
