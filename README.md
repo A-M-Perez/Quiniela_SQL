@@ -1,6 +1,6 @@
 # Argentinean "Quiniela" SQL
 
-One of the most popular Argentinean lotteries is called "Quiniela", where people can bet from anywhere in the country and takes place four times a day. People can bet on any number, at any position (1 to 20), for a specific period of the day (4 of them), province in which the lottery takes place, and number of digits.
+One of the most popular Argentinean lotteries is called "Quiniela", where people can bet from any location in the country and it takes place four times a day. People can bet on any number, at any position (1 to 20), for a specific period of the day (4 of them), province in which the lottery takes place, and number of digits.
 
 For example, one person can place a bet of $10 to the number 1234, position 1, Quiniela nacional at the period "vespertina". Another example, could be the exact same, but only betting at the number 12.
 
@@ -9,6 +9,8 @@ The "Quiniela" pays as follows (for position 1):
 - 3 digits right -right to left-: 600 times what has been bet.
 - 2 digits right -right to left-: 70 times what has been bet.
 - 1 digit right -right to left-: 7 times what has been bet.
+
+Full range of betting options and their pay, can be found in: https://www.laquinieladetucuman.com.ar/quiniela-nacional/cuanto-paga-premios
 
 ## Project objective
 
