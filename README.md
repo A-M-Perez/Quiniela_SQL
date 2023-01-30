@@ -49,20 +49,21 @@ This project aims to explore, append to one unique table, and clean a raw datase
 
 *All steps detailed below have their corresponding reference to that in the commented SQL code*
 
->&nbsp;
->- Create Database (1)
 ><br>
->- Import individual tables using the 'Table Data Import Wizard'
+> - Create Database (1)
+><br><br>
+> - Import individual tables using the 'Table Data Import Wizard'
+><br><br>
+> - Create a Function to return the full 'UNION ALL' code, to be executed by a Stored Procedure (2)
+><br><br>
+> - Create a Stored Procedure to execute the Function from step 2 (4)
+><br><br>
+> - Explore, analyze and clean data, to determine which steps related to Data Cleaning should be included in the Stored Procedure (3)
+><br><br>
+> - Update the Stored Procedure to also include all relevant exploration and cleaning steps of the process (4)
+><br><br>
+> - Execute the Stored Procedure and export the generated table as .CSV using the 'Table Data Export Wizard' (5)
 ><br>
->- Create a Function to return the full 'UNION ALL' code, to be executed by a Stored Procedure (2)
-><br>
->- Create a Stored Procedure to execute the Function from step 2 (4)
-><br>
->- Explore, analyze and clean data, to determine which steps related to Data Cleaning should be included in the Stored Procedure (3)
-><br>
->- Update the Stored Procedure to also include all relevant exploration and cleaning steps of the process (4)
-><br>
->- Execute the Stored Procedure and export the generated table as .CSV using the 'Table Data Export Wizard' (5)
 
 ## How this project helped me grow:
 
