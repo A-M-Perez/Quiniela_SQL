@@ -29,7 +29,7 @@ This project aims to explore, append to one unique table, and clean a raw datase
 
 - ***position***: This field contains the position number in which the result was drawn. There are 20 -4 digit- numbers drawn in each Quiniela, Period and date. Values can be duplicated since every Quiniela and Period have the same number of positions. Values are of type NUMBER.
 
-- ***result***: This field contains the result for the specific lottery and position. Values cannot be duplicated for the same Quiniela, Period and date. Values are of type NUMBER and should integers of 4 digits.
+- ***result***: This field contains the result for the specific lottery and position. Values cannot be duplicated for the same Quiniela, Period and date. Values are of type NUMBER and should be integers of 4 digits.
 
 ## Repository overview / structure
 
